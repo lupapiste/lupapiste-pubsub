@@ -2,7 +2,7 @@ steps:
   - name: 'gcr.io/$PROJECT_ID/openjdk-11-lein-slim-buster'
     entrypoint: 'bash'
     args:
-     - c
+     - -c
      - CLOUDPERMIT_GITHUB_TOKEN="$$GITHUB_TOKEN" lein deploy
     env:
       - 'CLOUDPERMIT_GITHUB_USERNAME=lupapiste-ci'
