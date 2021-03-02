@@ -1,0 +1,14 @@
+steps:
+  - name: 'gcr.io/$PROJECT_ID/openjdk-11-lein-slim-buster'
+    entrypoint: 'bash'
+    args:
+     - c
+     - CLOUDPERMIT_GITHUB_TOKEN="$$GITHUB_TOKEN" lein deploy
+    env:
+      - 'CLOUDPERMIT_GITHUB_USERNAME=lupapiste-ci'
+    secretEnv:
+      - GITHUB_TOKEN
+    availableSecrets:
+      secretManager:
+        - versionName: projects/686311695231/secrets/lupapiste-ci-github-token/versions/1
+          env: 'GITHUB_TOKEN'

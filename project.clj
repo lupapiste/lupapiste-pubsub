@@ -6,4 +6,8 @@
                  [com.taoensso/timbre "4.10.0"]
                  [org.clojure/tools.reader "1.3.5"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.10.2"]]}}
+  :deploy-repositories [["releases" {:url           "https://maven.pkg.github.com/cloudpermit/lupapiste-pubsub"
+                                     :username      :env/cloudpermit_github_username
+                                     :password      :env/cloudpermit_github_token
+                                     :sign-releases false}]]
   )
