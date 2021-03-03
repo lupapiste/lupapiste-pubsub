@@ -28,11 +28,12 @@
     (default-transport-channel-provider)))
 
 (defn terminate-transport! [channel-provider]
-  (let [tc   ^GrpcTransportChannel (.getTransportChannel channel-provider)
-        chan ^ManagedChannel (.getChannel tc)]
-    (.shutdown tc)
-    (.shutdown chan)
-    (.awaitTermination chan 5 TimeUnit/SECONDS)))
+  (when (instance? FixedTransportChannelProvider channel-provider)
+    (let [tc   ^GrpcTransportChannel (.getTransportChannel channel-provider)
+          chan ^ManagedChannel (.getChannel tc)]
+      (.shutdown tc)
+      (.shutdown chan)
+      (.awaitTermination chan 5 TimeUnit/SECONDS))))
 
 (defn topic-admin-client [{:keys [channel-provider credentials-provider]}]
   (-> (TopicAdminSettings/newBuilder)

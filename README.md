@@ -1,8 +1,6 @@
 # lupapiste-pubsub
 
-## Usage
-
-FIXME
+Common utilities for constructing Google Cloud Pub/Sub components in Lupapiste applications.
 
 ## License
 
