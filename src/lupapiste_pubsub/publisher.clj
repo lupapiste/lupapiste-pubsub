@@ -20,6 +20,8 @@
                                 (.setRequestByteThreshold 200000)
                                 (.setElementCountThreshold 500)
                                 (.setFlowControlSettings (-> (FlowControlSettings/newBuilder)
+                                                             (.setMaxOutstandingElementCount 10000)
+                                                             (.setMaxOutstandingRequestBytes 10000000) ; 10 MB
                                                              (.setLimitExceededBehavior FlowController$LimitExceededBehavior/Block)
                                                              (.build)))
                                 (.build)))
