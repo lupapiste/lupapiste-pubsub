@@ -6,13 +6,23 @@
            [com.google.cloud.pubsub.v1 Publisher]
            [com.google.protobuf ByteString]
            [com.google.pubsub.v1 PubsubMessage TopicName]
-           [java.util.concurrent TimeUnit]))
+           [java.util.concurrent TimeUnit]
+           [com.google.api.gax.batching BatchingSettings FlowControlSettings FlowController$LimitExceededBehavior]
+           [org.threeten.bp Duration]))
 
 (defn publisher [^TopicName topic channel-provider credentials-provider]
   (timbre/info "Creating publisher for topic" (.toString topic))
   (-> (Publisher/newBuilder topic)
       (.setChannelProvider channel-provider)
       (.setCredentialsProvider credentials-provider)
+      (.setBatchingSettings (-> (BatchingSettings/newBuilder)
+                                (.setDelayThreshold (Duration/ofMillis 2000))
+                                (.setRequestByteThreshold 200000)
+                                (.setElementCountThreshold 500)
+                                (.setFlowControlSettings (-> (FlowControlSettings/newBuilder)
+                                                             (.setLimitExceededBehavior FlowController$LimitExceededBehavior/Block)
+                                                             (.build)))
+                                (.build)))
       (.build)))
 
 (defprotocol MessagePublisher
