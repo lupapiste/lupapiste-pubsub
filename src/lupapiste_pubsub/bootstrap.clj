@@ -1,4 +1,4 @@
-(ns lupapiste-pubsub.client
+(ns lupapiste-pubsub.bootstrap
   (:require [taoensso.timbre :as timbre]
             [clojure.java.io :as io])
   (:import [com.google.cloud.pubsub.v1 TopicAdminClient TopicAdminSettings SubscriptionAdminSettings SubscriptionAdminClient]
