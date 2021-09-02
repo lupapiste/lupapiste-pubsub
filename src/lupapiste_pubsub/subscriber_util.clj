@@ -9,27 +9,23 @@
            [com.google.api.gax.batching FlowControlSettings]))
 
 
-(defn- process-response [{:keys [response-to error] :as msg}]
-  (try
-    (if error
-      (timbre/warn "Error response to message" (str response-to) ":" error)
-      (timbre/debug "Received response to message" (str response-to)))
-    ;; TODO: Implement response handlers?
-    (catch Exception e
-      (timbre/error e "Response handler error for message" (pr-str msg)))))
-
-
-(defn receive-message [_ ^PubsubMessage message ^AckReplyConsumer consumer]
-  (try
-    (if-let [edn-msg (-> message .getData .toStringUtf8 edn/decode)]
-      (if (:response-to edn-msg)
-        (process-response edn-msg)
-        (timbre/error "No supported action in Pub/Sub message" (pr-str edn-msg)))
-      (timbre/error "No data present in Pub/Sub message id" (.getMessageId message)))
-    (.ack consumer)
-    (catch Exception e
-      (.ack consumer)
-      (timbre/error e "Pub/Sub receiver error handling message" (.getMessageId message)))))
+(defn ^MessageReceiver build-receiver [handler]
+  (reify MessageReceiver
+    (^void receiveMessage [_ ^PubsubMessage message ^AckReplyConsumer consumer]
+      (try
+        (if-let [edn-msg (try (-> message .getData .toStringUtf8 edn/decode)
+                              (catch Exception e
+                                (timbre/error e "Could not read message data as edn")))]
+          (if (handler edn-msg)
+            (.ack consumer)
+            ;; Handler signaled that the operation failed (temporarily)
+            (.nack consumer))
+          (do (timbre/error "No data present in Pub/Sub message id" (.getMessageId message))
+              (.ack consumer)))
+        (catch Exception e
+          ;; Unhandled Exception in handler. Should not occur, message is nacked so that data is not lost
+          (.nack consumer)
+          (timbre/error e "Pub/Sub receiver error handling message" (.getMessageId message)))))))
 
 
 (defn setup-subscription [^SubscriptionAdminClient client
@@ -45,7 +41,7 @@
 (defn build-subscriber
   [{:keys [project-id topic-admin subscription-admin channel-provider credentials-provider]}
    topic-name
-   ^MessageReceiver receiver]
+   handler]
   (try
     (let [project-id   (or project-id (ServiceOptions/getDefaultProjectId))
           topic        (TopicName/of project-id topic-name)
@@ -55,6 +51,7 @@
           flow-control (-> (FlowControlSettings/newBuilder)
                            (.setMaxOutstandingElementCount 30)
                            (.build))
+          receiver     (build-receiver handler)
           subscriber   (-> (Subscriber/newBuilder subscription receiver)
                            (.setChannelProvider channel-provider)
                            (.setCredentialsProvider credentials-provider)

@@ -32,9 +32,9 @@
         (.build))))
 
 
-(defn- subscribe-to-response-topic [pub-sub-client {:keys [response-topic]}]
-  (when response-topic
-    (pubsub/subscribe pub-sub-client response-topic)))
+(defn- subscribe-to-response-topic [pub-sub-client {:keys [response-topic response-handler]}]
+  (when (and response-topic response-handler)
+    (pubsub/subscribe pub-sub-client response-topic response-handler)))
 
 
 (defn publish [^Publisher pub pub-sub-client message]

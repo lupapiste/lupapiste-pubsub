@@ -2,28 +2,21 @@
   (:require [lupapiste-pubsub.protocol :as pubsub]
             [lupapiste-pubsub.publisher-util :as pub-util]
             [lupapiste-pubsub.subscriber-util :as sub-util]
-            [taoensso.timbre :as timbre]
-            [lupapiste-pubsub.topic :as topic])
-  (:import [com.google.cloud.pubsub.v1 Publisher Subscriber MessageReceiver AckReplyConsumer]
-           [java.util.concurrent TimeUnit]
-           [com.google.pubsub.v1 PubsubMessage]))
+            [taoensso.timbre :as timbre])
+  (:import [com.google.cloud.pubsub.v1 Publisher Subscriber]
+           [java.util.concurrent TimeUnit]))
 
 
 (deftype PubSubClient [config *publishers *subscribers]
-  MessageReceiver
-  (^void receiveMessage [this ^PubsubMessage message ^AckReplyConsumer consumer]
-    (sub-util/receive-message (assoc config :pub-sub-client this) message consumer))
-
   pubsub/MessageQueueClient
   (publish [this topic-name message]
     (-> (pubsub/get-publisher this topic-name)
         (pub-util/publish this message)))
 
-  (subscribe [this topic-name]
-    (let [actual-topic-name (topic/env-prefix (:environment config) topic-name)]
-      (when-not (get @*subscribers actual-topic-name)
-        (->> (sub-util/build-subscriber config actual-topic-name this)
-             (swap! *subscribers assoc actual-topic-name)))))
+  (subscribe [_ topic-name handler]
+    (when-not (get @*subscribers topic-name)
+      (->> (sub-util/build-subscriber config topic-name handler)
+           (swap! *subscribers assoc topic-name))))
 
   (get-publisher [_ topic-name]
     (if topic-name
@@ -58,10 +51,5 @@
     (reset! *subscribers {})))
 
 
-(defn init [{:keys [topics] :as config}]
-  (let [pub-sub-client (->PubSubClient config (atom {}) (atom {}))]
-    (future
-      (Thread/sleep 5000) ; Sleep to let rest of the system get up before starting processing
-      (doseq [topic topics]
-        (pubsub/subscribe pub-sub-client topic)))
-    pub-sub-client))
+(defn init [config]
+  (->PubSubClient config (atom {}) (atom {})))
