@@ -7,7 +7,7 @@
            [java.util.concurrent TimeUnit]))
 
 
-(deftype PubSubClient [config *publishers *subscribers]
+(defrecord PubSubClient [config *publishers *subscribers]
   pubsub/MessageQueueClient
   (publish [this topic-name message]
     (-> (pubsub/get-publisher this topic-name)
