@@ -44,5 +44,6 @@
         msg  (-> (PubsubMessage/newBuilder)
                  (.setData data)
                  (.build))]
-    (timbre/debug "Publishing message" (:message-id message) "to queue" (.toString (.getTopicName pub)))
+    (timbre/debug "Publishing message" (or (:message-id message) (:id message) (:uri message))
+                  "to queue" (.toString (.getTopicName pub)))
     (.publish pub msg)))
