@@ -9,5 +9,9 @@
      Returning a falsy value results in a NACK and the message will be redelivered.")
   (get-publisher [this topic-name]
     "Get or create the Publisher for the given topic name.")
+  (stop-subscriber [this topic-name]
+    "Stops subscriber.")
+  (remove-subscription [this topic-name]
+    "Shuts down subscriber and removes subscription. Messages in the subscription will be lost.")
   (halt [this]
     "Shutdown all publishers and subscribers associated with this client."))

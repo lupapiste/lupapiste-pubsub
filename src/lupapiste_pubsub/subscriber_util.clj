@@ -6,9 +6,10 @@
            [com.google.cloud ServiceOptions]
            [com.google.cloud.pubsub.v1 MessageReceiver AckReplyConsumer Subscriber SubscriptionAdminClient]
            [com.google.protobuf Duration FieldMask]
-           [com.google.pubsub.v1 PubsubMessage ProjectSubscriptionName PushConfig TopicName RetryPolicy UpdateSubscriptionRequest Subscription]
+           [com.google.pubsub.v1 PubsubMessage ProjectSubscriptionName PushConfig TopicName RetryPolicy UpdateSubscriptionRequest Subscription SubscriptionName]
            [com.google.api.gax.batching FlowControlSettings]
-           [com.google.api.gax.core InstantiatingExecutorProvider]))
+           [com.google.api.gax.core InstantiatingExecutorProvider]
+           [java.util.concurrent TimeUnit]))
 
 
 (defn ^MessageReceiver build-receiver [handler]
@@ -110,3 +111,25 @@
       subscriber)
     (catch Throwable t
       (timbre/error t "Could not init Pub/Sub subscriber for" topic-name))))
+
+
+(defn stop-subscriber [^Subscriber sub]
+  (try
+    (.stopAsync sub)
+    (.awaitTerminated sub 5 TimeUnit/SECONDS)
+    (timbre/info (.getSubscriptionNameString sub) "terminated")
+    (catch Throwable t
+      (timbre/error t))))
+
+
+(defn delete-subscription [{:keys [project-id subscription-admin]} topic-name]
+  (let [project-id        (or project-id (ServiceOptions/getDefaultProjectId))
+        subscription-name (SubscriptionName/of project-id (str topic-name "-subscription"))]
+    (try
+      (.deleteSubscription ^SubscriptionAdminClient subscription-admin subscription-name)
+      (timbre/info "Deleted subscription" (.toString subscription-name))
+      (catch NotFoundException _
+        ;; ignore
+        )
+      (catch Throwable t
+        (timbre/error t)))))

@@ -3,8 +3,7 @@
             [lupapiste-pubsub.publisher-util :as pub-util]
             [lupapiste-pubsub.subscriber-util :as sub-util]
             [taoensso.timbre :as timbre])
-  (:import [com.google.cloud.pubsub.v1 Publisher Subscriber]
-           [java.util.concurrent TimeUnit]))
+  (:import [com.google.cloud.pubsub.v1 Publisher Subscriber]))
 
 
 (defrecord PubSubClient [config *publishers *subscribers]
@@ -26,27 +25,24 @@
             publisher))
       (throw (IllegalArgumentException. "No topic-name provided for publisher"))))
 
+  (stop-subscriber [_ topic-name]
+    (some-> (get @*subscribers topic-name) sub-util/stop-subscriber))
+
+  (remove-subscription [_ topic-name]
+    (some-> (get @*subscribers topic-name) sub-util/stop-subscriber)
+    (sub-util/delete-subscription config topic-name))
+
   (halt [_]
     (timbre/info "Tearing down publishers")
     (->> @*publishers
          (pmap (fn [[_ ^Publisher pub]]
-                 (try
-                   (.shutdown pub)
-                   (.awaitTermination pub 20 TimeUnit/SECONDS)
-                   (timbre/info (.getTopicNameString pub) "terminated")
-                   (catch Throwable t
-                     (timbre/error t)))))
+                 (pub-util/shutdown-publisher pub)))
          dorun)
     (reset! *publishers {})
     (timbre/info "Tearing down subscribers")
     (->> @*subscribers
          (pmap (fn [[_ ^Subscriber sub]]
-                 (try
-                   (.stopAsync sub)
-                   (.awaitTerminated sub 5 TimeUnit/SECONDS)
-                   (timbre/info (.getSubscriptionNameString sub) "terminated")
-                   (catch Throwable t
-                     (timbre/error t)))))
+                 (sub-util/stop-subscriber sub)))
          dorun)
     (reset! *subscribers {})))
 
