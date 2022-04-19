@@ -42,7 +42,8 @@
 (defn setup-subscription [^SubscriptionAdminClient client
                           ^ProjectSubscriptionName subscription-name
                           ^TopicName topic
-                          ^long ack-deadline-seconds]
+                          ^long ack-deadline-seconds
+                          enable-exactly-once-delivery?]
   (try
     (let [subscription (.getSubscription client subscription-name)]
       (when (or (not= (.getAckDeadlineSeconds subscription) ack-deadline-seconds)
@@ -68,14 +69,14 @@
                (.setPushConfig (PushConfig/getDefaultInstance))
                (.setAckDeadlineSeconds ack-deadline-seconds)
                (.setRetryPolicy (retry-policy))
-               ;; TODO: Support enabling exactly-once-delivery when the library supports it
+               (.setEnableExactlyOnceDelivery (boolean enable-exactly-once-delivery?))
                (.build))
            (.createSubscription client)))))
 
 
 (defn build-subscriber
   [{:keys [project-id topic-admin subscription-admin channel-provider credentials-provider
-           thread-count ack-deadline-seconds]}
+           thread-count ack-deadline-seconds enable-exactly-once-delivery?]}
    topic-name
    handler]
   (try
@@ -83,7 +84,11 @@
           topic             (TopicName/of project-id topic-name)
           subscription      (ProjectSubscriptionName/of project-id (str topic-name "-subscription"))
           _                 (topic/setup-topic topic-admin topic)
-          _                 (setup-subscription subscription-admin subscription topic (or ack-deadline-seconds 300))
+          _                 (setup-subscription subscription-admin
+                                                subscription
+                                                topic
+                                                (or ack-deadline-seconds 300)
+                                                enable-exactly-once-delivery?)
           thread-count      (or thread-count 2)
           executor-provider (-> (InstantiatingExecutorProvider/newBuilder)
                                 (.setExecutorThreadCount thread-count)
