@@ -42,7 +42,7 @@
 (defn setup-subscription [^SubscriptionAdminClient client
                           ^ProjectSubscriptionName subscription-name
                           ^TopicName topic
-                          ^long ack-deadline-seconds
+                          ack-deadline-seconds
                           enable-exactly-once-delivery?]
   (try
     (let [subscription (.getSubscription client subscription-name)]
