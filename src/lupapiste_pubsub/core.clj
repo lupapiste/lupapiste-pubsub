@@ -12,9 +12,12 @@
     (-> (pubsub/get-publisher this topic-name)
         (pub-util/publish this message)))
 
-  (subscribe [_ topic-name handler]
+  (subscribe [this topic-name handler]
+    (pubsub/subscribe this topic-name handler nil))
+
+  (subscribe [_ topic-name handler additional-config]
     (when-not (get @*subscribers topic-name)
-      (->> (sub-util/build-subscriber config topic-name handler)
+      (->> (sub-util/build-subscriber (merge config additional-config) topic-name handler)
            (swap! *subscribers assoc topic-name))))
 
   (get-publisher [_ topic-name]

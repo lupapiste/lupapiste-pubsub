@@ -77,7 +77,7 @@
 
 (defn build-subscriber
   [{:keys [project-id topic-admin subscription-admin channel-provider credentials-provider
-           thread-count ack-deadline-seconds enable-exactly-once-delivery?]}
+           thread-count ack-deadline-seconds enable-exactly-once-delivery? max-elements-per-thread]}
    topic-name
    handler]
   (try
@@ -94,8 +94,9 @@
           executor-provider (-> (InstantiatingExecutorProvider/newBuilder)
                                 (.setExecutorThreadCount thread-count)
                                 (.build))
+          max-elements      (or max-elements-per-thread 5)
           flow-control      (-> (FlowControlSettings/newBuilder)
-                                (.setMaxOutstandingElementCount (* 5 thread-count))
+                                (.setMaxOutstandingElementCount (* max-elements thread-count))
                                 (.build))
           receiver          (build-receiver handler)
           subscriber        (-> (Subscriber/newBuilder subscription receiver)

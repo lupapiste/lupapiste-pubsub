@@ -1,4 +1,4 @@
-(defproject lupapiste/pubsub-client "2.4.0"
+(defproject lupapiste/pubsub-client "2.5.0"
   :description "Common GCP Pub/Sub utils for Lupapiste"
   :url "https://github.com/cloudpermit/lupapiste-pubsub"
   :dependencies [[com.google.cloud/google-cloud-core "2.5.11"]
