@@ -3,13 +3,13 @@ steps:
     entrypoint: 'bash'
     args:
      - -c
-     - CLOUDPERMIT_GITHUB_TOKEN="$$GITHUB_TOKEN" lein deploy
+     - CLOJARS_TOKEN="$$CLOJARS_TOKEN" lein deploy clojars
     env:
-      - 'CLOUDPERMIT_GITHUB_USERNAME=lupapiste-ci'
+      - 'CLOJARS_USERNAME=lupapiste'
     secretEnv:
-      - GITHUB_TOKEN
+      - CLOJARS_TOKEN
 
 availableSecrets:
   secretManager:
-    - versionName: projects/686311695231/secrets/lupapiste-ci-github-token/versions/1
-      env: 'GITHUB_TOKEN'
+    - versionName: projects/686311695231/secrets/clojars-deploy-token/versions/1
+      env: 'CLOJARS_TOKEN'
